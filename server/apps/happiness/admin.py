@@ -1,3 +1,8 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import Happiness
+
+
+@admin.register(Happiness)
+class HappinessAdmin(admin.ModelAdmin):
+    pass
