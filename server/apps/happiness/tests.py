@@ -66,6 +66,27 @@ class HappinessViewTests(TestCase, AuthMixin):
         self.assertEqual(response.json(), _get_stats_from_entries([{'level': 3}]))
         return response
 
+    def test_post_invalid_level_value_should_fail(self):
+        self.login()
+        response = self.client.post(reverse('happiness-list'), {'level': 0})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json(),
+            {'level': ['Happiness level must be between 1 and 5']},
+        )
+        response = self.client.post(reverse('happiness-list'), {'level': -1})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json(),
+            {'level': ['Happiness level must be between 1 and 5']},
+        )
+        response = self.client.post(reverse('happiness-list'), {'level': 6})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json(),
+            {'level': ['Happiness level must be between 1 and 5']},
+        )
+
     def test_get_list_after_post(self):
         self.post(data={'level': 3})
         response = self.client.get(reverse('happiness-list'))
