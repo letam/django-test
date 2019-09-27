@@ -19,3 +19,10 @@ python3 -m venv venv && source venv/bin/activate
 ```
 pip install --upgrade pip && pip install -r requirements.txt
 ```
+
+# Development Server
+To test the development server locally.
+```
+python manage.py runserver
+```
+
