@@ -40,7 +40,7 @@ INSTALLED_APPS = [
 
     'rest_framework',
 
-    'apps.happiness',
+    'apps.happiness.apps.HappinessConfig',
 ]
 
 MIDDLEWARE = [
