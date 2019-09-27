@@ -6,19 +6,21 @@ from django.db.models import Count
 from .models import Happiness
 
 
-def get_stats(date=None) -> Dict[str, any]:
+def get_stats(user, date: str = None) -> Dict[str, any]:
     if not date:
         date = now().date()
-    tally = get_happiness_tally(date)
+    tally = get_happiness_tally(user, date)
     average = get_average_happiness(tally)
     return {'tally': tally, 'average': average}
 
 
-def get_happiness_tally(date) -> Dict[str, int]:
+def get_happiness_tally(user, date: str) -> Dict[str, int]:
+    qs = Happiness.objects.filter(date=date)
+    if user.is_authenticated and user.userprofile.team_id:
+        qs = qs.filter(user__userprofile__team_id=user.userprofile.team_id)
     return {
         x['level']: x['count']
-        for x in Happiness.objects.filter(date=date)
-        .values('level')
+        for x in qs.values('level')
         .annotate(count=Count('level'))
         .order_by('level')
         .values('level', 'count')
@@ -35,5 +37,8 @@ def get_average_happiness(tally: List[Dict[int, int]]) -> float:
     return average
 
 
-def get_average_happiness_from_db(date) -> float:
-    return Happiness.objects.filter(date=date).aggregate(Avg('level'))['level__avg']
+def get_average_happiness_from_db(user, date: str) -> float:
+    qs = Happiness.objects.filter(date=date)
+    if user.is_authenticated and user.userprofile.team_id:
+        qs = qs.filter(user__userprofile__team_id=user.userprofile.team_id)
+    return qs.aggregate(Avg('level'))['level__avg']

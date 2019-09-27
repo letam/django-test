@@ -43,14 +43,14 @@ class HappinessViewSet(viewsets.ModelViewSet):
         """
         Return stats for today.
         """
-        return Response(get_stats())
+        return Response(get_stats(request.user))
 
     def create(self, request):
         """
         Create entry for user's happiness level for today and return stats.
         """
         response = super().create(request)
-        response.data = get_stats()
+        response.data = get_stats(request.user)
         return response
 
     def perform_create(self, serializer):
@@ -70,12 +70,12 @@ class HappinessViewSet(viewsets.ModelViewSet):
             parse_date(date)
         except ValueError as e:
             raise ValidationError('Invalid date provided.')
-        return Response(get_stats(date))
+        return Response(get_stats(request.user, date))
 
     def update(self, request, date=None, *args, **kwargs):
         """
         Replace or partially update the user's entry for the date and return stats.
         """
         response = super().update(request, date, *args, **kwargs)
-        response.data = get_stats(date)
+        response.data = get_stats(request.user, date)
         return response

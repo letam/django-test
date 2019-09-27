@@ -7,6 +7,8 @@ from django.utils.timezone import now, timedelta
 
 from rest_framework.reverse import reverse
 
+from apps.happiness.models import Team
+
 
 User = get_user_model()
 
@@ -38,10 +40,34 @@ class AuthMixin:
 class HappinessViewTests(TestCase, AuthMixin):
 
     def setUp(self):
-        self.entries_created = []
+        self.team_a = Team.objects.create(name='Team A')
+        self.team_b = Team.objects.create(name='Team B')
+
+        self.entries_created_by_team_id = {
+            self.team_a.id: [],
+            self.team_b.id: [],
+        }
+
         self.user1 = User.objects.create_user(username='user1', password=USER_PASSWORD)
+        self.user1.userprofile.team = self.team_a
+        self.user1.userprofile.save()
+
         self.user2 = User.objects.create_user(username='user2', password=USER_PASSWORD)
+        self.user2.userprofile.team = self.team_a
+        self.user2.userprofile.save()
+
         self.user3 = User.objects.create_user(username='user3', password=USER_PASSWORD)
+        self.user3.userprofile.team = self.team_a
+        self.user3.userprofile.save()
+
+        self.user4 = User.objects.create_user(username='user4', password=USER_PASSWORD)
+        self.user4.userprofile.team = self.team_b
+        self.user4.userprofile.save()
+
+        self.user5 = User.objects.create_user(username='user5', password=USER_PASSWORD)
+        self.user5.userprofile.team = self.team_b
+        self.user5.userprofile.save()
+
         self.user = self.user1
 
     def test_get_list_empty(self):
@@ -56,9 +82,10 @@ class HappinessViewTests(TestCase, AuthMixin):
             data = {'level': 3}
         self.login(user)
         response = self.client.post(reverse('happiness-list'), data)
+        entries_from_team = self.entries_created_by_team_id[user.userprofile.team_id]
         if response.status_code == 201:
-            self.entries_created.append(data)
-        self.assertEqual(response.json(), _get_stats_from_entries(self.entries_created))
+            entries_from_team.append(data)
+        self.assertEqual(response.json(), _get_stats_from_entries(entries_from_team))
         return response
 
     def test_post(self):
@@ -128,6 +155,73 @@ class HappinessViewTests(TestCase, AuthMixin):
         self.assertEqual(
             response.json(),
             _get_stats_from_entries([{'level': 1}, {'level': 2}, {'level': 3}]),
+        )
+
+    def test_get_list_after_posts_from_users_on_different_teams(self):
+
+        # Team A
+        response = self.post(self.user1, {'level': 1})
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json(), _get_stats_from_entries([{'level': 1}]))
+        self.logout()
+
+        response = self.post(self.user2, {'level': 2})
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(
+            response.json(), _get_stats_from_entries([{'level': 1}, {'level': 2}])
+        )
+        self.logout()
+
+        response = self.post(self.user3, {'level': 3})
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(
+            response.json(),
+            _get_stats_from_entries([{'level': 1}, {'level': 2}, {'level': 3}]),
+        )
+        self.logout()
+
+        # Team B
+
+        ## Confirm that TEAM B has empty stats
+        self.login(self.user4)
+        response = self.client.get(reverse('happiness-list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), EMPTY_STATS)
+
+        response = self.post(self.user4, {'level': 4})
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(
+            response.json(),
+            _get_stats_from_entries([{'level': 4}]),
+        )
+        self.logout()
+
+        response = self.post(self.user5, {'level': 5})
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(
+            response.json(),
+            _get_stats_from_entries([{'level': 4}, {'level': 5}]),
+        )
+        self.logout()
+
+        ## Confirm that TEAM A's stats stayed the same
+        self.login(self.user1)
+        response = self.client.get(reverse('happiness-list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            _get_stats_from_entries([{'level': 1}, {'level': 2}, {'level': 3}]),
+        )
+        self.logout()
+
+        ## Confirm that unauthenticated user sees stats combined from all teams
+        response = self.client.get(reverse('happiness-list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            _get_stats_from_entries(
+                [{'level': 1}, {'level': 2}, {'level': 3}, {'level': 4}, {'level': 5}]
+            ),
         )
 
     def test_post_to_same_date_twice_should_fail(self):
