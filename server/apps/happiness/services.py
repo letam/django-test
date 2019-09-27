@@ -1,6 +1,6 @@
 from typing import List, Dict
 
-from django.utils import timezone
+from django.utils.timezone import now
 from django.db.models import Count
 
 from .models import Happiness
@@ -8,7 +8,7 @@ from .models import Happiness
 
 def get_stats(date=None) -> Dict[str, any]:
     if not date:
-        date = timezone.now().date()
+        date = now().date()
     tally = get_happiness_tally(date)
     average = get_average_happiness(tally)
     return {'tally': tally, 'average': average}

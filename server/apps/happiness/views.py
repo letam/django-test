@@ -2,7 +2,7 @@ from dateutil.parser import parse as parse_date
 
 from django.db.utils import IntegrityError
 from django.http import Http404
-from django.utils import timezone
+from django.utils.timezone import now
 
 from rest_framework import status, viewsets
 from rest_framework.exceptions import ValidationError
@@ -30,7 +30,7 @@ class HappinessViewSet(viewsets.ModelViewSet):
             except ValueError as e:
                 raise ValidationError('Invalid date provided.')
         else:
-            date = timezone.now().date()
+            date = now().date()
         obj = Happiness.objects.filter(user=self.request.user, date=date).first()
         if not obj:
             if self.action == 'update':
@@ -54,7 +54,7 @@ class HappinessViewSet(viewsets.ModelViewSet):
         return response
 
     def perform_create(self, serializer):
-        today = timezone.now().date()
+        today = now().date()
         try:
             serializer.save(user=self.request.user, date=today)
         except IntegrityError as e:
