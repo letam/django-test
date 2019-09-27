@@ -10,5 +10,11 @@ class Happiness(models.Model):
     class Meta:
         unique_together = [['user', 'date']]
 
-    def __str__(self):
-        return f'{self.date}\t{self.user.id}: {self.level}'
+
+class Team(models.Model):
+    name = models.CharField(max_length=150)
+
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True)
