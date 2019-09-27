@@ -17,13 +17,11 @@ EMPTY_STATS = {
     'average': None,
 }
 
-SAMPLE_REQUEST_DATA = {
-    'level': 3
-}
-
 
 class AuthMixin:
-    def login(self, user):
+    def login(self, user=None):
+        if not user:
+            user = self.user
         self.client.get(settings.LOGIN_URL)
         response = self.client.post(
             settings.LOGIN_URL, {'username': user.username, 'password': USER_PASSWORD}
@@ -37,36 +35,81 @@ class AuthMixin:
 
 
 class HappinessViewTests(TestCase, AuthMixin):
+
     def setUp(self):
-        self.user = User.objects.create_user(username='user', password=USER_PASSWORD)
+        self.entries_created = []
+        self.user1 = User.objects.create_user(username='user1', password=USER_PASSWORD)
+        self.user2 = User.objects.create_user(username='user2', password=USER_PASSWORD)
+        self.user3 = User.objects.create_user(username='user3', password=USER_PASSWORD)
+        self.user = self.user1
 
     def test_get_list_empty(self):
         response = self.client.get(reverse('happiness-list'))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), EMPTY_STATS)
 
+    def post(self, user=None, data=None):
+        if not user:
+            user = self.user
+        if not data:
+            data = {'level': 3}
+        self.login(user)
+        response = self.client.post(reverse('happiness-list'), data)
+        if response.status_code == 201:
+            self.entries_created.append(data)
+        self.assertEqual(response.json(), _get_stats_from_entries(self.entries_created))
+        return response
+
     def test_post(self):
-        self.login(self.user)
-        response = self.client.post(reverse('happiness-list'), SAMPLE_REQUEST_DATA)
+        response = self.post(data={'level': 3})
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(response.json(), _get_stats_from_entries([SAMPLE_REQUEST_DATA]))
+        self.assertEqual(response.json(), _get_stats_from_entries([{'level': 3}]))
+        return response
 
     def test_get_list_after_post(self):
-        self.test_post()
+        self.post(data={'level': 3})
         response = self.client.get(reverse('happiness-list'))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), _get_stats_from_entries([SAMPLE_REQUEST_DATA]))
+        self.assertEqual(response.json(), _get_stats_from_entries([{'level': 3}]))
 
     def test_unauthenticated_get_list_after_post(self):
-        self.test_post()
+        self.post(data={'level': 3})
         self.logout()
         response = self.client.get(reverse('happiness-list'))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), _get_stats_from_entries([SAMPLE_REQUEST_DATA]))
+        self.assertEqual(response.json(), _get_stats_from_entries([{'level': 3}]))
+
+    def test_unauthenticated_get_list_after_posts_from_multiple_users(self):
+
+        response = self.post(self.user1, {'level': 1})
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json(), _get_stats_from_entries([{'level': 1}]))
+        self.logout()
+
+        response = self.post(self.user2, {'level': 2})
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(
+            response.json(), _get_stats_from_entries([{'level': 1}, {'level': 2}])
+        )
+        self.logout()
+
+        response = self.post(self.user3, {'level': 3})
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(
+            response.json(),
+            _get_stats_from_entries([{'level': 1}, {'level': 2}, {'level': 3}]),
+        )
+        self.logout()
+
+        response = self.client.get(reverse('happiness-list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            _get_stats_from_entries([{'level': 1}, {'level': 2}, {'level': 3}]),
+        )
 
     def test_post_to_same_date_twice_should_fail(self):
-        self.test_post()
-        self.login(self.user)
+        self.post()
         response = self.client.post(reverse('happiness-list'), {'level': 5})
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
@@ -75,14 +118,14 @@ class HappinessViewTests(TestCase, AuthMixin):
         )
 
     def test_post_as_nonuser_should_fail(self):
-        response = self.client.post(reverse('happiness-list'), SAMPLE_REQUEST_DATA)
+        response = self.client.post(reverse('happiness-list'), {'level': 3})
         self.assertEqual(response.status_code, 403)
 
     def test_modify_as_nonuser_should_fail(self):
-        self.test_post()
+        self.post(data={'level': 3})
         record_id = 1
         modified_entry = {'level': 4}
-        self.assertNotEqual(SAMPLE_REQUEST_DATA, modified_entry)
+        self.assertNotEqual({'level': 3}, modified_entry)
 
         self.logout()
         for method in ['put', 'patch', 'delete']:
@@ -95,18 +138,18 @@ class HappinessViewTests(TestCase, AuthMixin):
             self.assertEqual(response.status_code, 403)
 
     def test_get(self):
-        self.test_post()
+        self.post()
         record_id = 1
 
         response = self.client.get(reverse('happiness-detail', [record_id]))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), SAMPLE_REQUEST_DATA)
+        self.assertEqual(response.json(), {'level': 3})
 
     def test_put(self):
-        self.test_post()
+        self.post()
         record_id = 1
         modified_entry = {'level': 4}
-        self.assertNotEqual(SAMPLE_REQUEST_DATA, modified_entry)
+        self.assertNotEqual({'level': 3}, modified_entry)
 
         response = self.client.put(
             reverse('happiness-detail', [record_id]),
@@ -117,10 +160,10 @@ class HappinessViewTests(TestCase, AuthMixin):
         self.assertEqual(response.json(), modified_entry)
 
     def test_patch(self):
-        self.test_post()
+        self.post()
         record_id = 1
         modified_entry = {'level': 4}
-        self.assertNotEqual(SAMPLE_REQUEST_DATA, modified_entry)
+        self.assertNotEqual({'level': 3}, modified_entry)
 
         response = self.client.patch(
             reverse('happiness-detail', [record_id]),
@@ -131,7 +174,7 @@ class HappinessViewTests(TestCase, AuthMixin):
         self.assertEqual(response.json(), modified_entry)
 
     def test_delete(self):
-        self.test_post()
+        self.post()
         record_id = 1
 
         response = self.client.delete(reverse('happiness-detail', [record_id]))
