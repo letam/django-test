@@ -39,3 +39,10 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 5. Add users via the admin by visiting [http://localhost:8000/admin/](http://localhost:8000/admin/) using the superuser account created
+
+# Automated Testing
+To run tests for applications:
+```
+python manage.py test apps
+```
+
