@@ -7,5 +7,8 @@ class Happiness(models.Model):
     date = models.DateField()
     level = models.PositiveSmallIntegerField()
 
+    class Meta:
+        unique_together = [['user', 'date']]
+
     def __str__(self):
         return f'{self.date}\t{self.user.id}: {self.level}'

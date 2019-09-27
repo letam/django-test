@@ -50,3 +50,17 @@ class HappinessViewTests(TestCase, AuthMixin):
         response = self.client.get(reverse('happiness-list'))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), [SAMPLE_ENTRY])
+
+    def test_post_to_same_date_twice_should_fail(self):
+        self.test_post()
+        self.login(self.user)
+        try:
+            response = self.client.post(
+                reverse('happiness-list'), {'date': SAMPLE_ENTRY['date'], 'level': 5}
+            )
+        except Exception as e:
+            self.assertEqual(e.__class__.__name__, 'IntegrityError')
+            self.assertEqual(
+                str(e),
+                'UNIQUE constraint failed: happiness_happiness.user_id, happiness_happiness.date',
+            )
