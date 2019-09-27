@@ -64,3 +64,27 @@ class HappinessViewTests(TestCase, AuthMixin):
                 str(e),
                 'UNIQUE constraint failed: happiness_happiness.user_id, happiness_happiness.date',
             )
+
+    def test_post_as_nonuser_should_fail(self):
+        response = self.client.post(reverse('happiness-list'), SAMPLE_ENTRY)
+        self.assertEqual(response.status_code, 403)
+
+    def test_modify_as_nonuser_should_fail(self):
+        self.test_post()
+        self.logout()
+        record_id = 1
+
+        modified_entry = {
+            'date': SAMPLE_ENTRY['date'],
+            'level': 4,
+        }
+        self.assertNotEqual(SAMPLE_ENTRY, modified_entry)
+
+        for method in ['put', 'patch', 'delete']:
+            request = getattr(self.client, method)
+            response = request(
+                reverse('happiness-detail', [record_id]),
+                modified_entry,
+                content_type='application/json',
+            )
+            self.assertEqual(response.status_code, 403)
