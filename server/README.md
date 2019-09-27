@@ -28,7 +28,7 @@ source venv/bin/activate
 ```
 2. Run database migrations:
 ```
-python manage.py migrations
+python manage.py migrate
 ```
 3. Create superuser:
 ```
