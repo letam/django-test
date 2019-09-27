@@ -6,7 +6,7 @@ from .models import Happiness
 class HappinessSerializer(serializers.ModelSerializer):
     class Meta:
         model = Happiness
-        fields = ['date', 'level']
+        fields = ['level']
 
     def validate_level(self, value):
         if value < 1 or value > 5:
