@@ -71,15 +71,14 @@ class HappinessViewTests(TestCase, AuthMixin):
 
     def test_modify_as_nonuser_should_fail(self):
         self.test_post()
-        self.logout()
         record_id = 1
-
         modified_entry = {
             'date': SAMPLE_ENTRY['date'],
             'level': 4,
         }
         self.assertNotEqual(SAMPLE_ENTRY, modified_entry)
 
+        self.logout()
         for method in ['put', 'patch', 'delete']:
             request = getattr(self.client, method)
             response = request(
@@ -88,3 +87,59 @@ class HappinessViewTests(TestCase, AuthMixin):
                 content_type='application/json',
             )
             self.assertEqual(response.status_code, 403)
+
+    def test_get(self):
+        self.test_post()
+        record_id = 1
+
+        response = self.client.get(reverse('happiness-detail', [record_id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), SAMPLE_ENTRY)
+
+    def test_put(self):
+        self.test_post()
+        record_id = 1
+        modified_entry = {
+            'date': SAMPLE_ENTRY['date'],
+            'level': 4,
+        }
+        self.assertNotEqual(SAMPLE_ENTRY, modified_entry)
+
+        response = self.client.put(
+            reverse('happiness-detail', [record_id]),
+            modified_entry,
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), modified_entry)
+
+    def test_patch(self):
+        self.test_post()
+        record_id = 1
+        modified_entry = {
+            'date': SAMPLE_ENTRY['date'],
+            'level': 4,
+        }
+        self.assertNotEqual(SAMPLE_ENTRY, modified_entry)
+
+        response = self.client.patch(
+            reverse('happiness-detail', [record_id]),
+            modified_entry,
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), modified_entry)
+
+    def test_delete(self):
+        self.test_post()
+        record_id = 1
+
+        response = self.client.delete(reverse('happiness-detail', [record_id]))
+        self.assertEqual(response.status_code, 204)
+
+        response = self.client.get(reverse('happiness-detail', [record_id]))
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.get(reverse('happiness-list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), [])
