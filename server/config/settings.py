@@ -128,3 +128,17 @@ STATIC_URL = '/static/'
 
 LOGIN_URL = '/api-auth/login/'
 LOGOUT_URL = '/api-auth/logout/'
+
+
+# Debug Toolbar
+
+if DEBUG:
+    INSTALLED_APPS += [
+        'debug_toolbar',
+    ]
+    MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
+    INTERNAL_IPS = [
+        'localhost',
+        '127.0.0.1',
+        '0.0.0.0',
+    ]
