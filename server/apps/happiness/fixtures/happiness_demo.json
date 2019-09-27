@@ -1,0 +1,200 @@
+[
+{
+    "model": "auth.user",
+    "pk": 1,
+    "fields": {
+        "password": "pbkdf2_sha256$150000$uQT0p3bLayd4$pfWVuqvypGm4b559PZ5+HT9dRe4nNv56tWHrXq8MXpw=",
+        "last_login": "2019-09-27T21:11:24.397Z",
+        "is_superuser": true,
+        "username": "super",
+        "first_name": "",
+        "last_name": "",
+        "email": "",
+        "is_staff": true,
+        "is_active": true,
+        "date_joined": "2019-09-27T10:05:14.177Z",
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "auth.user",
+    "pk": 2,
+    "fields": {
+        "password": "pbkdf2_sha256$150000$uQT0p3bLayd4$pfWVuqvypGm4b559PZ5+HT9dRe4nNv56tWHrXq8MXpw=",
+        "last_login": null,
+        "is_superuser": false,
+        "username": "user2",
+        "first_name": "",
+        "last_name": "",
+        "email": "",
+        "is_staff": false,
+        "is_active": true,
+        "date_joined": "2019-09-27T21:10:49Z",
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "auth.user",
+    "pk": 3,
+    "fields": {
+        "password": "pbkdf2_sha256$150000$uQT0p3bLayd4$pfWVuqvypGm4b559PZ5+HT9dRe4nNv56tWHrXq8MXpw=",
+        "last_login": null,
+        "is_superuser": false,
+        "username": "user3",
+        "first_name": "",
+        "last_name": "",
+        "email": "",
+        "is_staff": false,
+        "is_active": true,
+        "date_joined": "2019-09-27T21:11:40Z",
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "auth.user",
+    "pk": 4,
+    "fields": {
+        "password": "pbkdf2_sha256$150000$uQT0p3bLayd4$pfWVuqvypGm4b559PZ5+HT9dRe4nNv56tWHrXq8MXpw=",
+        "last_login": null,
+        "is_superuser": false,
+        "username": "user4",
+        "first_name": "",
+        "last_name": "",
+        "email": "",
+        "is_staff": false,
+        "is_active": true,
+        "date_joined": "2019-09-27T21:11:40Z",
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "auth.user",
+    "pk": 5,
+    "fields": {
+        "password": "pbkdf2_sha256$150000$uQT0p3bLayd4$pfWVuqvypGm4b559PZ5+HT9dRe4nNv56tWHrXq8MXpw=",
+        "last_login": null,
+        "is_superuser": false,
+        "username": "user5",
+        "first_name": "",
+        "last_name": "",
+        "email": "",
+        "is_staff": false,
+        "is_active": true,
+        "date_joined": "2019-09-27T21:11:40Z",
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "happiness.happiness",
+    "pk": 1,
+    "fields": {
+        "user": 2,
+        "date": "2019-09-26",
+        "level": 1
+    }
+},
+{
+    "model": "happiness.happiness",
+    "pk": 2,
+    "fields": {
+        "user": 2,
+        "date": "2019-09-27",
+        "level": 5
+    }
+},
+{
+    "model": "happiness.happiness",
+    "pk": 3,
+    "fields": {
+        "user": 3,
+        "date": "2019-09-27",
+        "level": 4
+    }
+},
+{
+    "model": "happiness.happiness",
+    "pk": 4,
+    "fields": {
+        "user": 4,
+        "date": "2019-09-27",
+        "level": 3
+    }
+},
+{
+    "model": "happiness.happiness",
+    "pk": 5,
+    "fields": {
+        "user": 5,
+        "date": "2019-09-26",
+        "level": 2
+    }
+},
+{
+    "model": "happiness.happiness",
+    "pk": 6,
+    "fields": {
+        "user": 5,
+        "date": "2019-09-27",
+        "level": 1
+    }
+},
+{
+    "model": "happiness.team",
+    "pk": 1,
+    "fields": {
+        "name": "Team A"
+    }
+},
+{
+    "model": "happiness.team",
+    "pk": 2,
+    "fields": {
+        "name": "Team B"
+    }
+},
+{
+    "model": "happiness.userprofile",
+    "pk": 1,
+    "fields": {
+        "user": 1,
+        "team": null
+    }
+},
+{
+    "model": "happiness.userprofile",
+    "pk": 2,
+    "fields": {
+        "user": 2,
+        "team": 1
+    }
+},
+{
+    "model": "happiness.userprofile",
+    "pk": 3,
+    "fields": {
+        "user": 3,
+        "team": 1
+    }
+},
+{
+    "model": "happiness.userprofile",
+    "pk": 4,
+    "fields": {
+        "user": 4,
+        "team": 2
+    }
+},
+{
+    "model": "happiness.userprofile",
+    "pk": 5,
+    "fields": {
+        "user": 5,
+        "team": 2
+    }
+}
+]
