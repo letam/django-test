@@ -3,6 +3,7 @@ from typing import Dict, List
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.utils.timezone import now, timedelta
 
 from rest_framework.reverse import reverse
 
@@ -142,9 +143,22 @@ class HappinessViewTests(TestCase, AuthMixin):
         response = self.client.post(reverse('happiness-list'), {'level': 3})
         self.assertEqual(response.status_code, 403)
 
+    def put(self, user=None, data=None, date=None):
+        if not user:
+            user = self.user
+        if not data:
+            data = {'level': 3}
+        if not date:
+            date = now().date() - timedelta(days=1)
+        self.login(user)
+        response = self.client.put(
+            reverse('happiness-detail', [date]), data, content_type='application/json'
+        )
+        return response
+
     def test_modify_as_nonuser_should_fail(self):
-        self.post(data={'level': 3})
-        record_id = 1
+        yesterday = now().date() - timedelta(days=1)
+        self.put(data={'level': 3}, date=yesterday)
         modified_entry = {'level': 4}
         self.assertNotEqual({'level': 3}, modified_entry)
 
@@ -152,61 +166,98 @@ class HappinessViewTests(TestCase, AuthMixin):
         for method in ['put', 'patch', 'delete']:
             request = getattr(self.client, method)
             response = request(
-                reverse('happiness-detail', [record_id]),
+                reverse('happiness-detail', [yesterday]),
                 modified_entry,
                 content_type='application/json',
             )
             self.assertEqual(response.status_code, 403)
 
-    def test_get(self):
-        self.post()
-        record_id = 1
-
-        response = self.client.get(reverse('happiness-detail', [record_id]))
+    def test_get_for_date_with_no_data(self):
+        yesterday = now().date() - timedelta(days=1)
+        response = self.client.get(reverse('happiness-detail', [yesterday]))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {'level': 3})
+        self.assertEqual(response.json(), EMPTY_STATS)
 
-    def test_put(self):
-        self.post()
-        record_id = 1
+    def test_get_for_date_after_post(self):
+        yesterday = now().date() - timedelta(days=1)
+        self.put(data={'level': 3}, date=yesterday)
+        response = self.client.get(reverse('happiness-detail', [yesterday]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), _get_stats_from_entries([{'level': 3}]))
+
+    def test_put_without_prior_entry_should_create(self):
+        yesterday = now().date() - timedelta(days=1)
+        response = self.client.get(reverse('happiness-detail', [yesterday]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), EMPTY_STATS)
+
+        self.put(data={'level': 3})
         modified_entry = {'level': 4}
         self.assertNotEqual({'level': 3}, modified_entry)
 
         response = self.client.put(
-            reverse('happiness-detail', [record_id]),
+            reverse('happiness-detail', [yesterday]),
             modified_entry,
             content_type='application/json',
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), modified_entry)
+        self.assertEqual(response.json(), _get_stats_from_entries([{'level': 4}]))
+
+    def test_put_with_prior_entry_should_update(self):
+        self.login()
+        yesterday = now().date() - timedelta(days=1)
+
+        response = self.client.put(
+            reverse('happiness-detail', [yesterday]),
+            {'level': 3},
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), _get_stats_from_entries([{'level': 3}]))
 
     def test_patch(self):
-        self.post()
-        record_id = 1
+        yesterday = now().date() - timedelta(days=1)
+        self.put(data={'level': 3}, date=yesterday)
+
         modified_entry = {'level': 4}
         self.assertNotEqual({'level': 3}, modified_entry)
 
         response = self.client.patch(
-            reverse('happiness-detail', [record_id]),
+            reverse('happiness-detail', [yesterday]),
             modified_entry,
             content_type='application/json',
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), modified_entry)
+        self.assertEqual(response.json(), _get_stats_from_entries([{'level': 4}]))
+
+    def test_patch_without_prior_entry_should_404(self):
+        yesterday = now().date() - timedelta(days=1)
+        self.login()
+        response = self.client.patch(
+            reverse('happiness-detail', [yesterday]),
+            {'level': 3},
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json(), {'detail': 'Not found.'})
 
     def test_delete(self):
-        self.post()
-        record_id = 1
+        yesterday = now().date() - timedelta(days=1)
+        self.put(data={'level': 3}, date=yesterday)
 
-        response = self.client.delete(reverse('happiness-detail', [record_id]))
+        response = self.client.delete(reverse('happiness-detail', [yesterday]))
         self.assertEqual(response.status_code, 204)
 
-        response = self.client.get(reverse('happiness-detail', [record_id]))
-        self.assertEqual(response.status_code, 404)
-
-        response = self.client.get(reverse('happiness-list'))
+        response = self.client.get(reverse('happiness-detail', [yesterday]))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), EMPTY_STATS)
+
+    def test_delete_without_prior_entry_should_404(self):
+        yesterday = now().date() - timedelta(days=1)
+        self.login()
+        response = self.client.delete(reverse('happiness-detail', [yesterday]))
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json(), {'detail': 'Not found.'})
 
 
 def _get_stats_from_entries(entries: List[Dict[str, int]]):
